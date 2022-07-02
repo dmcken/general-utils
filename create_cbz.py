@@ -5,7 +5,7 @@ import shutil
 import sys
 import zipfile
 
-def zipdir(dirPath=None, zipFilePath=None, zipFileExtension = 'zip', includeDirInZip=True):
+def zipdir(dirPath=None, zipFilePath=None, zipFileExtension='zip', includeDirInZip=True):
     '''
 
     Examples:
@@ -53,14 +53,41 @@ def get_immediate_subdirectories(dir):
             if os.path.isdir(os.path.join(dir, name))]
 
 
-if __name__ == '__main__':
+def main() -> None:
+    '''Main create CBZ function'''
+
     if len(sys.argv) < 1:
         print("Please specify the path where the folders to cbz are located")
         sys.exit()
-        
-    for currDir in get_immediate_subdirectories(sys.argv[1]):
-        print(u"Dir: '{0}'".format(currDir), end=' ')
-        zipdir(currDir, zipFileExtension='cbz')
-        shutil.rmtree(os.path.join(os.path.abspath(sys.argv[1]), currDir))
+
+    parent_dir = sys.argv[1]
+
+    for sub_dir in get_immediate_subdirectories(parent_dir):
+        sub_full_path = os.path.join(os.path.abspath(parent_dir), sub_dir)
+        sub_dir_entries = os.listdir(sub_full_path)
+        invalid_entries = False
+        for curr_sub_entry in sub_dir_entries:
+            entry_path = os.path.join(sub_full_path, curr_sub_entry)
+            if os.path.isdir(entry_path):
+                print("Found sub directory")
+                invalid_entries = True
+                break
+
+            _, f_ext = curr_sub_entry.rsplit('.',maxsplit=1)
+            f_ext = f_ext.lower()
+            if f_ext not in ['jpg','png','txt']:
+                print(f"Found unwanted file type: {curr_sub_entry}")
+                invalid_entries = True
+                break
+
+        if invalid_entries:
+            print(f"Skipping dir: {sub_dir}")
+            continue
+
+        print(f"Dir: '{sub_dir}'", end=' ')
+        zipdir(sub_dir, zipFileExtension = 'cbz')
+        shutil.rmtree(sub_full_path)
         print("Done")
 
+if __name__ == '__main__':
+    main()
