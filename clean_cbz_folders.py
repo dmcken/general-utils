@@ -15,7 +15,7 @@ for curr_dir in os.listdir('.'):
         continue
 
     curr_dir = curr_dir.strip()
-    res = re.search(r'^(\[(ENG|JAP|RUS|SPA|CHI|[0-9\-]{4,9})\])+', curr_dir)
+    res = re.search(r'^(\[(ENG|JAP|RUS|RUS1|RUS2|SPA|CHI|[0-9\-\.]{4,9})\])+', curr_dir)
 
     if res is None:
         continue
