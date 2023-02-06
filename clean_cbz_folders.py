@@ -1,12 +1,11 @@
-'''Clean Comic book folders
+'''Clean Comic book folders.
 
+What we have are tags looking like [ENG] at the begining of the folder names.
+I then move it to the end of the name.
 '''
 
 import os
 import re
-
-
-
 
 for curr_dir in os.listdir('.'):
     #print(f"Dir: {curr_dir}")
