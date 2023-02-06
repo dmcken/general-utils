@@ -1,3 +1,19 @@
+'''Rename directory from parent.
+
+A very simple script to rename all folders in the CWD to the folder
+name concatenated to the parent.
+
+Useful in cases like this:
+Series/
+  vol1/
+  vol2/
+
+After running in the Series folder it will look like this:
+Series/
+  Series - vol1/
+  Series - vol2/
+'''
+
 import os
 import sys
 
