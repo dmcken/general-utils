@@ -60,7 +60,12 @@ def main() -> None:
         print("Please specify the path where the folders to cbz are located")
         sys.exit()
 
-    parent_dir = sys.argv[1]
+    try:
+        parent_dir = sys.argv[1]
+    except IndexError:
+        # Most likely the directory wasn't specified.
+        # Default to current directory
+        parent_dir = '.'
 
     for sub_dir in get_immediate_subdirectories(parent_dir):
         sub_full_path = os.path.join(os.path.abspath(parent_dir), sub_dir)
@@ -75,7 +80,7 @@ def main() -> None:
 
             _, f_ext = curr_sub_entry.rsplit('.',maxsplit=1)
             f_ext = f_ext.lower()
-            if f_ext not in ['jpg','jpeg','png','txt']:
+            if f_ext not in ['bmp','gif','jpg','jpeg','png','txt']:
                 print(f"Found unwanted file type: {curr_sub_entry}")
                 invalid_entries = True
                 break
