@@ -9,4 +9,5 @@ disable=logging-fstring-interpolation,fixme
 
 [REPORTS]
 output-format=text
-files-output=no
+#files-output=no
+
