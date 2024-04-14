@@ -6,13 +6,10 @@ Algorithm:
 # Sweep all the files in those folders (recursively as appropriate)
 
 '''
-import collections
 import functools
 import hashlib
 import logging
 import os
-import pprint
-import typing
 
 logger = logging.getLogger(__name__)
 
@@ -22,17 +19,25 @@ class FileEntry:
     '''
     File entry to process
     '''
-    __slots__ = ('file_path','archive_path','size')
+    __slots__ = (
+        'archive_path',
+        'file_path',
+        'hash_value',
+        'size',
+    )
 
-    def __init__(self, file_path: str, size: int, archive_path: str = '') -> None:
+    def __init__(self, file_path: str, size: int, archive_path: str = '',
+                 hash_value: str = '') -> None:
         '''
         '''
         self.file_path = file_path
         self.size = size
         self.archive_path = archive_path
+        self.hash_value = hash_value
 
     def __repr__(self) -> str:
-        return f'FileEntry({self.file_path},{self.size},{self.archive_path})'
+        return f'FileEntry({self.file_path},{self.size},' \
+            f'{self.archive_path},{self.hash_value})'
 
 class SearchDirEntry:
     '''
@@ -49,10 +54,8 @@ class SearchDirEntry:
         return f'SearchEntry({self.dir_path},{self.recursive},{self.search_archives})'
 
 def fetch_directory_contents(to_search: SearchDirEntry) -> list[FileEntry]:
+    '''Fetch directory contents returning a list of FileEntry objects.
     '''
-    Fetch directory contents returning a list of FileEntry objects
-    '''
-
     res = []
 
     for root, _, filenames in os.walk(to_search.dir_path):
@@ -73,57 +76,52 @@ def fetch_directory_contents(to_search: SearchDirEntry) -> list[FileEntry]:
 
     return res
 
-def find_duplicates(directories: list[SearchDirEntry]) -> list[list[FileEntry]]:
+def clean_sizes(file_sizes: dict[int, list[FileEntry]]) -> dict[int, list[FileEntry]]:
+    '''Clean out the file sizes.
     '''
-    Find duplicate files in the folders specified
+    sizes_to_delete = []
+    for f_size,files in file_sizes.items():
+        if len(files) <= 1:
+            sizes_to_delete.append(f_size)
 
+    for curr_size in sizes_to_delete:
+        del file_sizes[curr_size]
+
+    return file_sizes
+
+def calculate_hashes(files_to_check: list[FileEntry], hashes_to_calculate: list[str],
+                    read_block_size: int = 1024 * 1024) -> list[FileEntry]:
+    '''Calculate hashes for all the files listed.
+
+    Args:
+        files_to_check: file entries to calculate hashes for.
+        hashes_to_calculate: hash algorithms to generate the hash with.
+        read_block_size: Block size to read file in for hashing.
     '''
-    logger.debug("Scanning directories")
-    files_by_size = collections.defaultdict(list)
-    for curr_directory_entry in directories:
-        curr_files = fetch_directory_contents(curr_directory_entry)
-        for curr_file in curr_files:
-            files_by_size[curr_file.size].append(curr_file)
+    for curr_file in files_to_check:
+        hashes = {}
+        for curr_algorithm in hashes_to_calculate:
+            hashes[curr_algorithm] = {
+                'hash_calculated': '',
+                'hash_obj': hashlib.new(curr_algorithm),
+            }
 
-    # Filter out all those where there is only 1 file of that size
-    #TODO: Identify which method works better filter vs dictionary comprehension
-    potential_duplicates = dict(filter(lambda elem: len(elem[1]) > 1, files_by_size.items()))
-    #potential_duplicates = { key:value for (key,value) in files_by_size.items() if len(value) > 1}
 
-    duplicates_found = []
-    logger.debug(f"Number of potential duplicates: {len(potential_duplicates)}")
+        with open(curr_file.file_path, 'rb') as f_obj:
+            for block in iter(functools.partial(f_obj.read, read_block_size), b''):
+                for _,hash_data in hashes.items():
+                    hash_data['hash_obj'].update(block)
 
-    hashes_to_check = ['md5','sha1']
+        curr_file.hash_value = ''
+        hash_values = []
+        for curr_algorithm in hashes_to_calculate:
+            hashes[curr_algorithm]['hash_calculated'] = \
+                hash_values.append(f"{curr_algorithm}#"
+                f"{hashes[curr_algorithm]['hash_obj'].hexdigest()}")
+        curr_file.hash_value = "|".join(hash_values)
 
-    for _,files in potential_duplicates.items():
 
-        group_hashes = collections.defaultdict(list)
-
-        # Calculate all of the hashes desired
-        for curr_file in files:
-            hashes = {}
-            for curr_hash in hashes_to_check:
-                hashes[curr_hash] = hashlib.new(curr_hash)
-
-            with open(curr_file.file_path, 'rb') as f:
-                for block in iter(functools.partial(f.read, READ_BLOCK_SIZE), b''):
-                    for _,hash_obj in hashes.items():
-                        hash_obj.update(block)
-
-            hash_strings = []
-            for curr_hash in hashes_to_check:
-                hash_strings.append(hashes[curr_hash].hexdigest())
-            full_signature = '_'.join(hash_strings)
-
-            group_hashes[full_signature].append(curr_file)
-
-        dup_groups = { key:value for (key,value) in group_hashes.items() if len(value) > 1}
-
-        #logger.debug(f"Duplicates: {dup_groups}")
-        for _,dup_group in dup_groups.items():
-            duplicates_found.append(dup_group)
-
-    return duplicates_found
+    return files_to_check
 
 if __name__ == '__main__':
     logging.BASIC_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -131,15 +129,3 @@ if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG, format=logging.BASIC_FORMAT)
 
     logging.debug("Start")
-
-    dirs = [
-        SearchDirEntry(r'F:\eBooks-Incoming\Mathematics', True),
-    ]
-
-    duplicates = find_duplicates(dirs)
-
-    for curr_dup in duplicates:
-        logging.debug(f"Group of {len(curr_dup)} files of size: {curr_dup[0].size:,}")
-        for curr_file in curr_dup:
-            logging.debug(f"  File: {curr_file.file_path}")
-
