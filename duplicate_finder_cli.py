@@ -3,11 +3,14 @@
 
 
 import argparse
+import logging
 import os
 import pathlib
 import pprint
 
 import duplicate_finder
+
+logger = logging.getLogger(__name__)
 
 def parse_args():
     '''Parse arguments passed to script.
@@ -59,6 +62,7 @@ def parse_args():
 def calculate_duplicates(args):
     '''Calculate duplicates.
     '''
+    logger.info("Starting size scan")
     sizes = {}
     for curr_path in args.path:
         search_dir = duplicate_finder.SearchDirEntry(
@@ -75,6 +79,8 @@ def calculate_duplicates(args):
 
     # Clear out any sizes that only have 1 entry
     sizes = duplicate_finder.clean_sizes(sizes)
+
+    logger.info(f"Starting hashing '{len(sizes)}' groups")
 
     # Now we start calculating the hashes
     duplicates = {}
@@ -102,7 +108,12 @@ def main():
     '''
     args = parse_args()
 
-    print(f"Running duplicate finder with the following parameters: {args}")
+    logging.basicConfig(
+        format='%(asctime)s - %(message)s',
+        level=logging.INFO,
+    )
+
+    logger.info(f"Running duplicate finder with the following parameters: {args}")
 
     duplicates = calculate_duplicates(args)
 
