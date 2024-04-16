@@ -131,7 +131,7 @@ def main():
             if args.delete:
                 os.remove(to_del.file_path)
 
-    print(f"Files deleted {deleted_count} -> {deleted_size:,}")
+    logger.info(f"Files deleted {deleted_count} -> {deleted_size:,}")
 
 
 if __name__ == '__main__':
