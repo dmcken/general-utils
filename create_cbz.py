@@ -80,7 +80,7 @@ def main() -> None:
 
             _, f_ext = curr_sub_entry.rsplit('.',maxsplit=1)
             f_ext = f_ext.lower()
-            if f_ext not in ['bmp','gif','jpg','jpeg','png','txt']:
+            if f_ext not in ['bmp','gif','jpg','jpeg','png','txt','webp']:
                 print(f"Found unwanted file type: {curr_sub_entry}")
                 invalid_entries = True
                 break
