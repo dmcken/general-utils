@@ -49,8 +49,10 @@ def zipdir(dirPath=None, zipFilePath=None, zipFileExtension='zip', includeDirInZ
     outFile.close()
 
 def get_immediate_subdirectories(dir):
-    return [name for name in os.listdir(dir)
-            if os.path.isdir(os.path.join(dir, name))]
+    return sorted([
+        name for name in os.listdir(dir)
+            if os.path.isdir(os.path.join(dir, name))
+    ])
 
 
 def main() -> None:
